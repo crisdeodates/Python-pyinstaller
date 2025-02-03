@@ -6,12 +6,11 @@ on:
       - develop
       - v4
 
-
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -22,12 +21,12 @@ jobs:
         git fetch origin ${{ github.ref }}
         git checkout FETCH_HEAD --
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: 3.8
 
     - name: Install dependencies
-      run: pip install -U flake8 wheel setuptools yapf==0.31.0 toml
+      run: pip install --upgrade flake8 wheel setuptools yapf==0.32.0 toml
 
     - name: Test that yapf has been applied
       # If this check fails for your PR, run `yapf -rip .`
@@ -35,8 +34,3 @@ jobs:
 
     - name: Run Lint
       run: flake8 .
-
-    - name: Test Packaging
-      run: |
-        python setup.py sdist bdist_wheel
-        pip install -v .

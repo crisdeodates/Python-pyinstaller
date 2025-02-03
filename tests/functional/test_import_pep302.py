@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -19,7 +18,7 @@
 #   loader.get_code(fullmodname)
 #   loader.get_source(fullmodname)
 #
-# This test-cases test the return values of these functions for importers from pyimod03_importers module.
+# This test-cases test the return values of these functions for importers from pyimod02_importers module.
 
 # Note: The modules need to be imported at the end of the resp. code. Otherwise the pkgutil-functions take a very
 #       different branch (since the module is already in sys.modules) and what we want to test will not be tested.
@@ -58,7 +57,7 @@ def test_pep302_loader_frozen_module(pyi_builder):
 def test_pep302_loader_frozen_package(pyi_builder):
     pyi_builder.test_source(
         """
-        mod = 'distutils'
+        mod = 'json'
         import pkgutil
         ldr = pkgutil.get_loader(mod)
         assert ldr
@@ -66,7 +65,7 @@ def test_pep302_loader_frozen_package(pyi_builder):
         assert ldr.get_code(mod) is not None
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
-        import distutils
+        import json
         """
     )
 
@@ -74,7 +73,7 @@ def test_pep302_loader_frozen_package(pyi_builder):
 def test_pep302_loader_frozen_submodule(pyi_builder):
     pyi_builder.test_source(
         """
-        mod = 'distutils.config'
+        mod = 'json.encoder'
         import pkgutil
         ldr = pkgutil.get_loader(mod)
         assert ldr
@@ -82,7 +81,7 @@ def test_pep302_loader_frozen_submodule(pyi_builder):
         assert ldr.get_code(mod) is not None
         assert ldr.get_source(mod) is None
         # Import at the very end, just to get the module frozen.
-        import distutils.config
+        import json.encoder
         """
     )
 

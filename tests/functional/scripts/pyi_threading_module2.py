@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -35,7 +35,7 @@ if 'PYI_THREAD_TEST_CASE' in os.environ:
 
 # Execute itself in a subprocess.
 else:
-    # Differenciate subprocess code.
+    # Differentiate subprocess code.
     itself = sys.argv[0]
     # Run subprocess.
     import subprocess

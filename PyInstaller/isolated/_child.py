@@ -1,12 +1,12 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2021, PyInstaller Development Team.
+# Copyright (c) 2021-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
-# or later) with exception for distributing the bootloader.
+# or later) or, at the user's discretion, the MIT License.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #
-# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception OR MIT)
 # -----------------------------------------------------------------------------
 """
 The child process to be invoked by IsolatedPython().
@@ -44,8 +44,10 @@ def run_next_command(read_fh, write_fh):
         # It's time to end this child process
         return False
 
-    # There are 3 lines to read: The function's code, its args, then it kwargs.
+    # There are 5 lines to read: The function's code, its default args, its default kwargs, its args, and its kwargs.
     code = loads(b64decode(first_line.strip()))
+    _defaults = loads(b64decode(read_fh.readline().strip()))
+    _kwdefaults = loads(b64decode(read_fh.readline().strip()))
     args = loads(b64decode(read_fh.readline().strip()))
     kwargs = loads(b64decode(read_fh.readline().strip()))
 
@@ -54,6 +56,8 @@ def run_next_command(read_fh, write_fh):
         GLOBALS = {"__builtins__": __builtins__, "__isolated__": True}
         # Reconstruct the function.
         function = types.FunctionType(code, GLOBALS)
+        function.__defaults__ = _defaults
+        function.__kwdefaults__ = _kwdefaults
 
         # Run it.
         output = function(*args, **kwargs)
@@ -82,10 +86,16 @@ def run_next_command(read_fh, write_fh):
 
 
 if __name__ == '__main__':
+    # Mark this process as PyInstaller's isolated subprocess; this makes attempts at spawning further isolated
+    # subprocesses via `PyInstaller.isolated` from this process no-op.
+    sys._pyi_isolated_subprocess = True
+
     read_from_parent, write_to_parent = map(int, sys.argv[1:])
 
     with _open(read_from_parent, "rb") as read_fh:
         with _open(write_to_parent, "wb") as write_fh:
+            sys.path = loads(b64decode(read_fh.readline()))
+
             # Keep receiving and running instructions until the parent sends the signal to stop.
             while run_next_command(read_fh, write_fh):
                 pass
