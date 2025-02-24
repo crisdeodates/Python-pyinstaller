@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2021, PyInstaller Development Team.
+# Copyright (c) 2021-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -16,8 +16,6 @@
 #
 # In the unbuffered mode, the caller should receive the characters individually, and have enough time to process them.
 # In the buffered mode, all printed characters including the terminating E will be received at once.
-#
-# NOTE: the unbuffered mode for text layers was introduced in Python 3.7.
 
 import argparse
 import time

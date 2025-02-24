@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -54,5 +54,5 @@ for f in (plugin_filename, plugin_filename + 'c'):
         pass
 
 if is_error:
-    # Raise exeption.
+    # Raise exception.
     raise SystemExit('Failed to import the dynamic plugin.')

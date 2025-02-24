@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2021, PyInstaller Development Team.
+# Copyright (c) 2021-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+import os
 import sys
 import argparse
 import pkgutil
@@ -28,6 +29,12 @@ parser.add_argument(
     help="Optional prefix to pass to iter_modules.",
 )
 parser.add_argument(
+    '--resolve-pkg-path',
+    action='store_true',
+    default=False,
+    help="Resolve symbolic links in package path before passing it to pkgutil.iter_modules.",
+)
+parser.add_argument(
     '--output-file',
     default=None,
     type=str,
@@ -43,7 +50,10 @@ else:
 
 # Iterate over package's module
 package = importlib.import_module(args.package)
-for module in pkgutil.iter_modules(package.__path__, args.prefix):
+pkg_path = package.__path__
+if args.resolve_pkg_path:
+    pkg_path = [os.path.realpath(path) for path in pkg_path]
+for module in pkgutil.iter_modules(pkg_path, args.prefix):
     print("%s;%d" % (module.name, module.ispkg), file=fp)
 
 # Cleanup

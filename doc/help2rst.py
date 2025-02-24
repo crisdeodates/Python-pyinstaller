@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2021, PyInstaller Development Team.
+# Copyright (c) 2015-2023, PyInstaller Development Team.
 # Copyright (c) 2015-2020, Hartmut Goebel.
 #
 # Distributed under the terms of the GNU General Public License (version 2
@@ -85,7 +85,7 @@ OPTION_REGEX = re.compile(
 
     # An option name prefixed with at least 1 space.
     ^(\ +)(.*?)
-    # Optionally followed by at least 2 spaces and the start of the desciption.
+    # Optionally followed by at least 2 spaces and the start of the description.
     (?:\ {2,}(.*))?\n
 
     # More lines of description.

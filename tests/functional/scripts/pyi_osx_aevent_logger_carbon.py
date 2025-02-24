@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2021, PyInstaller Development Team.
+# Copyright (c) 2021-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -36,7 +36,7 @@ class EventTypeSpec(ctypes.Structure):
 
 
 def _ctypes_setup():
-    carbon = ctypes.CDLL("/System/Library/Carbon.framework/Carbon")
+    carbon = ctypes.CDLL("/System/Library/Frameworks/Carbon.framework/Carbon")
 
     ae_callback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
     carbon.AEInstallEventHandler.argtypes = [

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -10,19 +10,21 @@
 #-----------------------------------------------------------------------------
 """
 The code in this module supports the --icon parameter on Windows.
-(For --icon support under Mac OS, see building/osx.py.)
+(For --icon support under macOS, see building/osx.py.)
 
 The only entry point, called from api.py, is CopyIcons(), below. All the elaborate structure of classes that follows
 is used to support the operation of CopyIcons_FromIco(). None of these classes and globals are referenced outside
 this module.
 """
 
+import os
 import os.path
 import struct
 
 import PyInstaller.log as logging
 from PyInstaller import config
 from PyInstaller.compat import pywintypes, win32api
+from PyInstaller.building.icon import normalize_icon_type
 
 logger = logging.getLogger(__name__)
 
@@ -94,26 +96,25 @@ class GRPICONDIRENTRY(Structure):
 class IconFile:
     def __init__(self, path):
         self.path = path
-        if not os.path.isabs(path):
-            self.path = os.path.join(config.CONF['specpath'], path)
         try:
             # The path is from the user parameter, don't trust it.
             file = open(self.path, "rb")
         except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
-            raise SystemExit('Unable to open icon file {}'.format(path))
-        self.entries = []
-        self.images = []
-        header = self.header = ICONDIRHEADER()
-        header.fromfile(file)
-        for i in range(header.idCount):
-            entry = ICONDIRENTRY()
-            entry.fromfile(file)
-            self.entries.append(entry)
-        for e in self.entries:
-            file.seek(e.dwImageOffset, 0)
-            self.images.append(file.read(e.dwBytesInRes))
+            raise SystemExit(f'Unable to open icon file {self.path}!')
+        with file:
+            self.entries = []
+            self.images = []
+            header = self.header = ICONDIRHEADER()
+            header.fromfile(file)
+            for i in range(header.idCount):
+                entry = ICONDIRENTRY()
+                entry.fromfile(file)
+                self.entries.append(entry)
+            for e in self.entries:
+                file.seek(e.dwImageOffset, 0)
+                self.images.append(file.read(e.dwBytesInRes))
 
     def grp_icon_dir(self):
         return self.header.tostring()
@@ -138,7 +139,7 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
     :param str srcpath: list of 1 or more .ico file paths
     """
     icons = map(IconFile, srcpath)
-    logger.info("Copying icons from %s", srcpath)
+    logger.debug("Copying icons from %s", srcpath)
 
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
@@ -148,11 +149,11 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
     for i, f in enumerate(icons):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
-        win32api.UpdateResource(hdst, RT_GROUP_ICON, i, data)
-        logger.info("Writing RT_GROUP_ICON %d resource with %d bytes", i, len(data))
+        win32api.UpdateResource(hdst, RT_GROUP_ICON, i + 1, data)
+        logger.debug("Writing RT_GROUP_ICON %d resource with %d bytes", i + 1, len(data))
         for data in f.images:
             win32api.UpdateResource(hdst, RT_ICON, iconid, data)
-            logger.info("Writing RT_ICON %d resource with %d bytes", iconid, len(data))
+            logger.debug("Writing RT_ICON %d resource with %d bytes", iconid, len(data))
             iconid = iconid + 1
 
     win32api.EndUpdateResource(hdst, 0)
@@ -168,9 +169,11 @@ def CopyIcons(dstpath, srcpath):
     case, the path can be relative or absolute.
     """
 
-    if isinstance(srcpath, str):
+    if isinstance(srcpath, (str, os.PathLike)):
         # Just a single string, make it a one-element list.
         srcpath = [srcpath]
+    # Convert possible PathLike elements to strings to allow the splitter function to work.
+    srcpath = [str(path) for path in srcpath]
 
     def splitter(s):
         """
@@ -188,42 +191,31 @@ def CopyIcons(dstpath, srcpath):
 
     if len(srcpath) > 1:
         # More than one icon source given. We currently handle multiple icons by calling CopyIcons_FromIco(), which only
-        # allows .ico. In principle we could accept a mix of .ico and .exe, but it would complicate things. If you need
-        # it, submit a pull request.
+        # allows .ico, but will convert to that format if needed.
         #
         # Note that a ",index" on a .ico is just ignored in the single or multiple case.
         srcs = []
         for s in srcpath:
-            e = os.path.splitext(s[0])[1]
-            if e.lower() != '.ico':
-                raise ValueError('Multiple icons supported only from .ico files')
-            srcs.append(s[0])
+            srcs.append(normalize_icon_type(s[0], ("ico",), "ico", config.CONF["workpath"]))
         return CopyIcons_FromIco(dstpath, srcs)
 
     # Just one source given.
     srcpath, index = srcpath[0]
+
+    # Makes sure the icon exists and attempts to convert to the proper format if applicable
+    srcpath = normalize_icon_type(srcpath, ("exe", "ico"), "ico", config.CONF["workpath"])
+
     srcext = os.path.splitext(srcpath)[1]
+
     # Handle the simple case of foo.ico, ignoring any index.
     if srcext.lower() == '.ico':
         return CopyIcons_FromIco(dstpath, [srcpath])
 
-    # Single source is not .ico, presumably it is .exe (and if not, some error will occur). If relative, make it
-    # relative to the .spec file.
-    if not os.path.isabs(srcpath):
-        srcpath = os.path.join(config.CONF['specpath'], srcpath)
+    # Single source is not .ico, presumably it is .exe (and if not, some error will occur).
     if index is not None:
-        logger.info("Copying icon from %s, %d", srcpath, index)
+        logger.debug("Copying icon from %s, %d", srcpath, index)
     else:
-        logger.info("Copying icons from %s", srcpath)
-
-    # Bail out quickly if the input is invalid. Letting images in the wrong format be passed to Windows API gives very
-    # cryptic error messages, as it is generally unclear why PyInstaller would treat an image file as an executable.
-    if srcext != ".exe":
-        raise ValueError(
-            f"Received icon path '{srcpath}' which exists but is not in the correct format. On Windows, only '.ico' "
-            f"images or other '.exe' files may be used as icons. Please convert your '{srcext}' file to a '.ico' "
-            "and try again."
-        )
+        logger.debug("Copying icons from %s", srcpath)
 
     try:
         # Attempt to load the .ico or .exe containing the icon into memory using the same mechanism as if it were a DLL.

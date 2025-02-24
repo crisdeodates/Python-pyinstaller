@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -34,5 +34,5 @@ for ext in EXTENSION_SUFFIXES:
         break
 else:
     if not getattr(sys, 'frozen', False):
-        raise SystemExit('This script only works corretly when frozen')
+        raise SystemExit('This script only works correctly when frozen')
     raise SystemExit('Python C-extension file name is not correct.')

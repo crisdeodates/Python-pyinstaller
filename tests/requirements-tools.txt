@@ -9,38 +9,17 @@
 #   python -m pip install -r tests/requirements-tools.txt
 #   python -m pip install -r tests/requirements-libraries.txt  # extensive
 
-# include PyInstaller's requirements
--r ../requirements.txt
+# Base test requirements
+-r requirements-base.txt
 
-# Work-around for a bug in execnet 1.4.1
-execnet >= 1.5.0
+# The following libraries are required by some basic tests, but their
+# binary PyPI wheels may be available only for released python versions
+# (i.e., they might be unavailable for pre-release versions).
 
-# Testing framework.
-pytest >= 2.7.3
+pywin32; sys_platform == 'win32'
 
-# Plugin allowing running tests in parallel.
-pytest-xdist
+lxml
+xmldiff
 
-# Plugin to abort hanging tests.
-pytest-timeout >= 2.0.0
-# allows specifying order without duplicates
-pytest-drop-dup-tests
-# reruns failed flaky tests
-pytest-rerunfailures
-
-# Better subprocess alternative with implemented timeout.
-psutil
-
-# Check new flake8 violations on pull requests
-flake8
-
-# These are required by some of basic tests
-pywin32; sys_platform == 'win32' and python_version < '3.10'
-
-lxml; sys_platform != 'win32' or python_version < '3.10'  # no wheels for 3.10, but we can build from sdist on non-Windows
-
-# crypto support (`--key` option)
-tinyaes ~= 1.0
-
-# Ability to retry a failed test
-flaky
+# Used for strict validation of generated macOS .app bundles
+xattr; sys_platform == 'darwin'

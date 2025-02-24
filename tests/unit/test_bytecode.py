@@ -1,4 +1,13 @@
-# -*- coding: utf-8 -*-
+#-----------------------------------------------------------------------------
+# Copyright (c) 2021-2023, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+#-----------------------------------------------------------------------------
 """
 Tests for PyInstaller.depend.bytecode
 """
@@ -8,7 +17,6 @@ from types import CodeType
 from textwrap import dedent, indent
 import operator
 
-from PyInstaller import compat
 from PyInstaller.depend.bytecode import (
     function_calls,
     recursive_function_calls,
@@ -90,10 +98,9 @@ def test_global_functions():
     code = compile_(many_globals() + "foo(.456)")
     assert function_calls(code) == [('foo', [.456])]
 
-    # And the unlikely case of >256 arguments to one function call. This is a syntax error on Python <= 3.6
-    if compat.is_py37:
-        code = compile_(many_arguments())
-        assert function_calls(code) == [('foo', list(range(300)))]
+    # And the unlikely case of >256 arguments to one function call.
+    code = compile_(many_arguments())
+    assert function_calls(code) == [('foo', list(range(300)))]
 
     # For loops, if statements should work. The iterable in a comprehension loop works but the statement to be executed
     # repeatedly gets its own code object and therefore requires recursion (tested later).
@@ -138,13 +145,14 @@ def test_nested_codes():
     # The following compile() creates 3 code objects:
     #   - A global code.
     #   = The contents of foo().
-    #   - And the body of the comprehension loop.
+    #   - And the body of the embedded lambda.
 
     code = compile_(
         """
         def foo():
             bar()
-            return [fizz(3) for i in range(10)]
+            whoop = lambda : fizz(3)
+            return range(10)
         """
     )
     # There are no function calls in the global code.
@@ -155,15 +163,15 @@ def test_nested_codes():
     # foo() contains bar() and the iterable of the comprehension loop.
     assert function_calls(foo_code) == [('bar', []), ('range', [10])]
 
-    # Get the body of the comprehension loop.
-    list_code, = (i for i in foo_code.co_consts if isinstance(i, CodeType))
+    # Get the body of the embedded lambda.
+    lambda_code = next(i for i in foo_code.co_consts if isinstance(i, CodeType))
     # This contains fizz(3).
-    assert function_calls(list_code) == [('fizz', [3])]
+    assert function_calls(lambda_code) == [('fizz', [3])]
 
     assert recursive_function_calls(code) == {
         code: [],
         foo_code: [('bar', []), ('range', [10])],
-        list_code: [('fizz', [3])],
+        lambda_code: [('fizz', [3])],
     }
 
 
@@ -209,6 +217,6 @@ def test_finditer():
         # test below - it'll be the next character) which overlaps with this one so we must override regex's
         behaviour of ignoring overlapping matches to prevent these from getting lost.
     """
-    matches = list(finditer(re.compile(r"\d+"), "0123 4567 890 12 3 4"))
+    matches = list(finditer(re.compile(rb"\d+"), b"0123 4567 890 12 3 4"))
     aligned = [i.group() for i in matches]
-    assert aligned == ["0123", "567", "890", "12"]
+    assert aligned == [b"0123", b"567", b"890", b"12"]

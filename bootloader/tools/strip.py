@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #-----------------------------------------------------------------------------
-# Copyright (c) 2014-2021, PyInstaller Development Team.
+# Copyright (c) 2014-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -50,7 +50,7 @@ def configure(conf):
 class strip(Task.Task):
     run_str = '${STRIP} ${STRIPFLAGS} ${SRC}'
     color = 'BLUE'
-    after = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
+    after = ['cprogram', 'cshlib']
 
 
 @TaskGen.feature('strip')

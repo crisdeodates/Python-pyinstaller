@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -12,10 +12,9 @@
 import argparse
 import sys
 
-import pkg_resources
 import pytest
 
-from PyInstaller import compat
+from PyInstaller.compat import importlib_metadata
 
 
 def paths_to_test(include_only=None):
@@ -25,17 +24,17 @@ def paths_to_test(include_only=None):
     whose ``module_name`` begins with the provided string(s).
     """
     # Convert a string to a list.
-    if isinstance(include_only, compat.string_types):
+    if isinstance(include_only, str):
         include_only = [include_only]
 
     # Walk through all entry points.
     test_path_list = []
-    for entry_point in pkg_resources.iter_entry_points("pyinstaller40", "tests"):
+    for entry_point in importlib_metadata.entry_points(group="pyinstaller40", name="tests"):
         # Implement ``include_only``.
         if (
             not include_only  # If falsey, include everything,
             # Otherwise, include only the specified modules.
-            or any(entry_point.module_name.startswith(name) for name in include_only)
+            or any(entry_point.module.startswith(name) for name in include_only)
         ):
             test_path_list += list(entry_point.load()())
     return test_path_list
